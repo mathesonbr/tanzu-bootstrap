@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workstation
+  labels:
+    app: debian
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debian
+  template:
+    metadata:
+      labels:
+        app: debian
+    spec:
+      containers:
+      - name: workstation
+        image: debian:latest
+        volumeMounts:
+          - name: data
+            mountPath: /data
+        command: ["sh"]
+        args:
+          - -c
+          - "while true; do sleep 10; done"
+        env:
+          - name: ip-172-20-52-32.ec2.internal
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: workstation-disk
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workstation-disk
+spec:
+  storageClassName: tanzu-standard
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1G
